@@ -49,13 +49,11 @@
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 void gpio_init();
-static void delay_ms(uint32_t ms)
-{
-    // Crude software delay loop — adjust for your clock (assumes ~16 MHz HSI)
-    for (uint32_t i = 0; i < ms * 4000; i++) {
-        __NOP();
-    }
-}
+void USART1_init(void);
+char USART1_read(void);
+void motor_forward(void);
+void motor_stop(void);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -82,7 +80,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+USART1_init();
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -96,7 +94,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 gpio_init();
 tick = HAL_GetTick();
-motor_forward();
+//motor_forward();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -106,7 +104,17 @@ motor_forward();
     /* USER CODE END WHILE */
 	  if ((HAL_GetTick()-tick) >= delay){
 	  GPIOC->ODR ^= (0X01 << 13);  // Toggle PC13
-	  tick = HAL_GetTick();}             // Wait ~300 ms
+
+	  tick = HAL_GetTick();}
+	  char C = USART1_read();
+	  if (C == 'U'){
+		  motor_forward();
+	  }
+	  else if (C == 'S'){
+	  		  motor_stop();
+	  	  }
+
+	  // Wait ~300 ms
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -198,6 +206,64 @@ void motor_forward(void)
     GPIOA->BSRR = (1U << (4 + 16));
 }
 
+void motor_stop(void)
+{
+    // IN1 = LOW (PA1)
+    GPIOA->BSRR = (1U << (1 + 16));
+    // IN2 = LOW (PA2)
+    GPIOA->BSRR = (1U << (2 + 16));
+    // IN3 = LOW (PA3)
+    GPIOA->BSRR = (1U << (3 + 16));
+    // IN4 = LOW (PA4)
+    GPIOA->BSRR = (1U << (4 + 16));
+}
+
+void EN_USART1CLK(void){
+	RCC ->AHB1ENR |= 0x1;
+	RCC ->APB2ENR |= 0X10;
+}
+
+void USART1_ConfigPins(void){
+	// Set MODER FOR PA9 AND PA10 to be alternative functions
+	GPIOA -> MODER &= ~(0xF << (2*9));
+	GPIOA -> MODER |= (0xA << (2*9));
+	// set theier values to be AF7
+	// PA9
+	GPIOA -> AFR[1] &= ~(0xF << (4*1));
+	GPIOA -> AFR[1] |= (0x7 << (4*1));
+
+	// PA10
+	GPIOA -> AFR[1] &= ~(0xF << (4*2));
+	GPIOA -> AFR[1] |= (0x7 << (4*2));
+
+}
+void USART1_SetBaudRate(void){
+	// to calcualte (16MHz/ (16 * 9600) = 104. 166 = 0X683)
+	USART1 -> BRR = 0x683;
+}
+
+void USART1_ConfigSettings(void){
+	// enable RX and TX and EU and oversampling 16
+	USART1 -> CR1 = 0x200C;
+}
+
+void USART1_Send(int ch){
+	while ( !(USART1 ->SR & 0x80) ){}
+	USART1 -> DR = ch & 0xFF;
+}
+
+char USART1_read(void){
+	while( !(USART1 ->SR & 0x20)){}
+	return USART1 -> DR;
+}
+
+void USART1_init(void){
+	EN_USART1CLK();
+	USART1_ConfigPins();
+	USART1_SetBaudRate();
+	USART1_ConfigSettings();
+
+}
 /* USER CODE END 4 */
 
 /**
