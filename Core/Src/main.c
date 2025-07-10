@@ -53,7 +53,9 @@ void USART1_init(void);
 char USART1_read(void);
 void motor_forward(void);
 void motor_stop(void);
-
+void motor_backward(void);
+void motor_left(void);
+void motor_right(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -109,6 +111,15 @@ tick = HAL_GetTick();
 	  char C = USART1_read();
 	  if (C == 'U'){
 		  motor_forward();
+	  }
+	  else if (C == 'D') {
+	          motor_backward();
+	      }
+	  else if (C == 'L') {
+		  motor_left();
+	  }
+	  else if (C == 'R') {
+		  motor_right();
 	  }
 	  else if (C == 'S'){
 	  		  motor_stop();
@@ -215,6 +226,37 @@ void motor_stop(void)
     // IN3 = LOW (PA3)
     GPIOA->BSRR = (1U << (3 + 16));
     // IN4 = LOW (PA4)
+    GPIOA->BSRR = (1U << (4 + 16));
+}
+void motor_backward(void)
+{
+    // Left motor backward: IN1 = LOW, IN2 = HIGH
+    GPIOA->BSRR = (1U << (1 + 16));
+    GPIOA->BSRR = (1U << 2);
+
+    // Right motor backward: IN3 = LOW, IN4 = HIGH
+    GPIOA->BSRR = (1U << (3 + 16));
+    GPIOA->BSRR = (1U << 4);
+}
+
+void motor_left(void)
+{
+    // Left motor stop: IN1 = LOW, IN2 = LOW
+    GPIOA->BSRR = (1U << (1 + 16));
+    GPIOA->BSRR = (1U << (2 + 16));
+
+    // Right motor forward: IN3 = HIGH, IN4 = LOW
+    GPIOA->BSRR = (1U << 3);
+    GPIOA->BSRR = (1U << (4 + 16));
+}
+void motor_right(void)
+{
+    // Left motor forward: IN1 = HIGH, IN2 = LOW
+    GPIOA->BSRR = (1U << 1);
+    GPIOA->BSRR = (1U << (2 + 16));
+
+    // Right motor stop: IN3 = LOW, IN4 = LOW
+    GPIOA->BSRR = (1U << (3 + 16));
     GPIOA->BSRR = (1U << (4 + 16));
 }
 
