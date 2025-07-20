@@ -60,9 +60,6 @@ void motor_right(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-uint32_t tick;
-uint32_t delay = 300;
-
 /* USER CODE END 0 */
 
 /**
@@ -86,7 +83,7 @@ USART1_init();
   /* USER CODE END Init */
 
   /* Configure the system clock */
-  //SystemClock_Config();
+  
 
   /* USER CODE BEGIN SysInit */
 
@@ -95,27 +92,8 @@ USART1_init();
   /* Initialize all configured peripherals */
   /* USER CODE BEGIN 2 */
 gpio_init();
-tick = HAL_GetTick();
 
-void tim1_config() {
-    RCC->APB2ENR |= (1 << 11);     // Enable TIM1 clock
-    TIM1->PSC = 72 - 1;            // Prescaler for 1 MHz timer (assuming 72 MHz system clock)
-    TIM1->ARR = 0xFFFF;            // Set auto-reload register to max value
-    TIM1->CR1 |= (1 << 0);         // Enable TIM1
-}
 
-// Microsecond delay using TIM1
-void Delay_us(uint16_t us) {
-    TIM1->CNT = 0;                 // Reset counter
-    while (TIM1->CNT < us);       // Wait until desired time has passed
-}
-
-// Millisecond delay based on Delay_us
-void Delay_ms(uint16_t ms) {
-    for (uint16_t i = 0; i < ms; i++) {
-        Delay_us(1000);           // 1 millisecond delay
-    }
-}
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -123,25 +101,30 @@ void Delay_ms(uint16_t ms) {
   while (1)
   {
     /* USER CODE END WHILE */
-	  if ((HAL_GetTick()-tick) >= delay){
-	  GPIOC->ODR ^= (0X01 << 13);  // Toggle PC13
-
-	  tick = HAL_GetTick();}
 	  char C = USART1_read();
 	  if (C == 'U'){
 		  motor_forward();
+		  GPIOC->ODR = (0X01 << 13);  // Turn on PC13
 	  }
 	  else if (C == 'D') {
 	          motor_backward();
+			  GPIOC->ODR = (0X01 << 13);  // Turn on PC13
+
 	      }
 	  else if (C == 'L') {
 		  motor_left();
+		  GPIOC->ODR = (0X01 << 13);  // Turn on PC13
+
 	  }
 	  else if (C == 'R') {
 		  motor_right();
+		  GPIOC->ODR = (0X01 << 13);  // Turn on PC13
+
 	  }
 	  else if (C == 'S'){
 	  		  motor_stop();
+	  		  GPIOC->ODR = (0X0 << 13);  // Turn off PC13
+
 	  	  }
 
 	  // Wait ~300 ms
@@ -292,5 +275,3 @@ void USART1_init(void){
 
 }
 /* USER CODE END 4 */
-
-
